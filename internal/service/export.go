@@ -29,7 +29,7 @@ func (es *ExportService) Serve() {
 	r := c.NewReader("my-group", "message-log")
 
 	// w := p.NewWriter("message-log", "writer1")
-	w2 := p.NewWriter("message-send", "writer2")
+	w := p.NewWriter("message-send", "writer2")
 
 	csvService := csvSvc.NewCsvService(es.configs.Cfg, es.configs.Ctx)
 
@@ -45,6 +45,7 @@ func (es *ExportService) Serve() {
 
 		// fetch from cache
 		data, err := GetFromCache(es.configs.Cache, es.configs.Ctx, req.ExportID)
+
 		if data == nil && err == nil {
 			log.Printf("No key exist in cache. Trying DB.")
 		}
@@ -52,13 +53,15 @@ func (es *ExportService) Serve() {
 			log.Printf("Error received: %s", err)
 			return err
 		}
+		// fmt.Println("DATA STATUSCODE ========>", data.StatusCode)
 		if data != nil && data.StatusCode == 1 {
+			fmt.Println("DATA FROM CACHE ========>", data)
 			resp, err := json.Marshal(data)
 			if err != nil {
 				log.Printf("Error marshaling data: %s", err)
 				return err
 			}
-			if err = PublishMessage(p, w2, resp); err != nil {
+			if err = PublishMessage(p, w, resp); err != nil {
 				log.Printf("Error publishing message: %s", err)
 				return err
 			}
@@ -71,15 +74,15 @@ func (es *ExportService) Serve() {
 		if errDB != nil {
 			return err
 		}
-		respDB, err := json.Marshal(dataFromDB)
-		if err != nil {
-			log.Printf("Error marshaling data: %s", err)
-			return err
-		}
-		if err = PublishMessage(p, w2, respDB); err != nil {
-			log.Printf("Error publishing message: %s", err)
-			return err
-		}
+		// respDB, err := json.Marshal(dataFromDB)
+		// if err != nil {
+		// 	log.Printf("Error marshaling data: %s", err)
+		// 	return err
+		// }
+		// if err = PublishMessage(p, w, respDB); err != nil {
+		// 	log.Printf("Error publishing message: %s", err)
+		// 	return err
+		// }
 
 		req.Filters.Records = dataFromDB
 
@@ -104,13 +107,14 @@ func (es *ExportService) Serve() {
 			log.Printf("Error while marshalling the set cache data %s", err)
 			return err
 		}
+		fmt.Println("DATA FROM  ========>", inBytes)
 		if err := es.configs.Cache.SetInCache(es.configs.Ctx, req.ExportID, inBytes); err != nil {
 			log.Printf("Error occured while setting data in cache %s", err)
 			return err
 		}
 
 		// send message
-		if err := PublishMessage(p, w2, inBytes); err != nil {
+		if err := PublishMessage(p, w, inBytes); err != nil {
 			log.Printf("Error publishing message: %s", err)
 			return err
 		}

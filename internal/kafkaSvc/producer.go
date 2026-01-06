@@ -3,6 +3,8 @@ package kafkaSvc
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	"github.com/segmentio/kafka-go"
@@ -22,7 +24,7 @@ func NewProducer(cfg config.Config, ctx context.Context) *Producer {
 }
 
 func (p *Producer) NewWriter(topic string, writerStr string) *kafka.Writer {
-	// writeLog := log.New(os.Stdout, writerStr+": ", 0)
+	writeLog := log.New(os.Stdout, writerStr+": ", 0)
 	return kafka.NewWriter(kafka.WriterConfig{
 		Brokers:      p.cfg.KafkaBrokers,
 		Topic:        topic,
@@ -32,20 +34,22 @@ func (p *Producer) NewWriter(topic string, writerStr string) *kafka.Writer {
 		WriteTimeout: 30 * time.Second,
 		ReadTimeout:  30 * time.Second,
 		Balancer:     &kafka.LeastBytes{},
-		// Logger:       writeLog,
+		Logger:       writeLog,
 	})
 }
 
 func (p *Producer) WriteMessage(w *kafka.Writer, data []byte) error {
-	writeCtx, cancel := context.WithTimeout(p.ctx, 15*time.Second)
-	defer cancel()
+	writeCtx, cancel := context.WithTimeout(p.ctx, 30*time.Second)
 
 	err := w.WriteMessages(writeCtx, kafka.Message{
 		Key:   []byte("Export generated"),
 		Value: data,
 	})
+	cancel()
+
 	if err != nil {
 		return fmt.Errorf("error writing message: %w", err)
 	}
+	fmt.Println("Write Successfull============")
 	return nil
 }

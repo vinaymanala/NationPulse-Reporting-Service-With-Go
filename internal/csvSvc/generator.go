@@ -40,8 +40,15 @@ func (c *CsvSvc) GenerateCSV(req store.ExportRequest) ([]byte, error) {
 
 	for _, record := range records {
 		row := make([]string, len(headers))
+		for i := range headers {
+			if i < len(record) {
+				row[i] = record[i]
+			} else {
+				row[i] = ""
+			}
+		}
 		fmt.Println(record)
-		row = append(row, record...)
+		// row = append(row, record...)
 		if err := w.Write(row); err != nil {
 			log.Printf("Error writing a record: %s", err)
 			return nil, err

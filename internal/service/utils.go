@@ -16,7 +16,7 @@ func GetFromCache(redis *store.Redis, ctx context.Context, exportID string) (*st
 	if cacheData == nil && err == nil {
 		return nil, nil
 	}
-
+	fmt.Println("DATA FROM CACHE ========>", cacheData)
 	if err != nil || cacheData == nil {
 		log.Printf("Error received: ExportID: %s, err: %s", exportID, err)
 		return nil, err
